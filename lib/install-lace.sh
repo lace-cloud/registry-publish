@@ -30,7 +30,7 @@ PINNED_VERSION="v2.40.1"
 MINISIGN_PUBKEY="RWQ1lQVwyfRwZoE5kuVWWrqbg7FTBd6GS4O7VOFp2i8CDpSwvFMIRR/H"
 
 install_lace() {
-  local base_url version runner_temp install_dir lace_bin workdir sudo_cmd expected actual installed
+  local base_url version runner_temp install_dir workdir sudo_cmd digest expected actual installed
 
   base_url="${LACE_BASE_URL:-https://releases.lace.cloud}"
   workdir=""
@@ -70,13 +70,17 @@ install_lace() {
     $sudo_cmd apt-get install -y minisign
   fi
 
-  install_lace_sha256() {
+  # scripts/sha256.sh holds this same helper for the scripts that run from a
+  # checkout of the monorepo. This file ships under its own licence with
+  # nothing of the monorepo's beside it, so it carries its own copy; a
+  # missing tool is the caller's `|| die`.
+  sha256_of() {
     if command -v sha256sum >/dev/null 2>&1; then
       sha256sum "$1" | cut -d' ' -f1
     elif command -v shasum >/dev/null 2>&1; then
       shasum -a 256 "$1" | cut -d' ' -f1
     else
-      die "neither sha256sum nor shasum is available to verify the download"
+      return 1
     fi
   }
 
@@ -96,21 +100,28 @@ install_lace() {
   # binds content only, so without comparing it a validly-signed object
   # for something else could be served at this URL. Full equality, never a
   # prefix — the same rule scripts/install.sh holds every release object to.
-  expected="install.sh $(install_lace_sha256 "${workdir}/install.sh")"
+  digest="$(sha256_of "${workdir}/install.sh")" \
+    || die "could not compute the sha256 of install.sh — neither sha256sum nor shasum is available"
+  expected="install.sh ${digest}"
   actual="$(minisign -V -Q -m "${workdir}/install.sh" -x "${workdir}/install.sh.minisig" -P "$MINISIGN_PUBKEY" 2>"${workdir}/minisign.err")" \
     || die "the signature on ${base_url}/install.sh does not verify under the release-signing key — refusing to run it. ($(cat "${workdir}/minisign.err"))"
   [ "$actual" = "$expected" ] \
     || die "the signature on ${base_url}/install.sh is valid but its trusted comment reads '${actual}', not '${expected}' — a genuinely-signed object for something else is being served at this URL. Refusing to run it."
 
+  # The install directory is on PATH before install.sh runs: install.sh
+  # warns about a directory that is not. Assigning PATH clears bash's
+  # command hash, so the first `lace` below is found afresh. The check runs
+  # the lace on PATH — the one every later step runs — and first requires
+  # it to be the one just installed.
+  export PATH="${install_dir}:${PATH}"
   LACE_BASE_URL="$base_url" sh "${workdir}/install.sh" --version "$version" --install-dir "$install_dir"
-
-  lace_bin="${install_dir}/lace"
-  installed="$("$lace_bin" version)"
+  [ "$(command -v lace)" = "${install_dir}/lace" ] \
+    || die "lace on PATH is $(command -v lace), not ${install_dir}/lace"
+  installed="$(lace version)"
   [ "$installed" = "lace ${version}" ] \
-    || die "${lace_bin} reports '${installed}', expected 'lace ${version}'"
+    || die "lace on PATH reports '${installed}', expected 'lace ${version}'"
 
   rm -rf "$workdir"
-  export PATH="${install_dir}:${PATH}"
   # Every `lace module validate` in the job shares one provider cache, so a
   # push of many modules downloads each provider once.
   mkdir -p "${runner_temp}/lace-tf-plugins"

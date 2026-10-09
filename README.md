@@ -20,7 +20,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: lace-cloud/registry-publish@v1
         with:
           token: ${{ secrets.LACE_TOKEN }}
