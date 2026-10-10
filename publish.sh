@@ -105,7 +105,7 @@ publish_one() {
   # its argv is checked against the command tree.
   if [ "$axis" = module ]; then
     set +e
-    lace module validate --path "$d"
+    lace module validate --view publication --path "$d"
     rc=$?
     set -e
     if [ "$rc" -ne 0 ]; then

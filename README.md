@@ -49,7 +49,10 @@ Any organization publishes from its own repository with these same two files.
 For each file the push changed, the action walks up to the nearest
 `manifest.yaml` and publishes that directory with `lace registry register`. A
 module is validated first and registered with its tree; the other axes are
-registered by their manifest. A `README.md` beside the manifest is published
+registered by their manifest. A module is validated as its publication: the
+registry view its children resolve against is the one the publish checks, so a
+public module's children must be public, and validate refuses, naming the
+child, before anything is published. A `README.md` beside the manifest is published
 with it. Publishing unchanged content reports `unchanged`, so a re-run is safe.
 
 Every changed manifest is tried. A refusal is recorded, the action goes on to
@@ -88,8 +91,8 @@ on:
 
 - The action runs on `push` or `workflow_dispatch` and refuses every other
   event. A `pull_request` token cannot publish by design.
-- `id-token: write`: a module publish is verified by the GitHub OIDC token of
-  the job that runs it.
+- `id-token: write`: every publish, on every axis, is verified by the GitHub
+  OIDC token of the job that runs it.
 - The checkout is the commit that triggered the run. The action refuses a
   checkout with `ref:` set to another commit, because the tree it would
   publish is not the tree the run's identity names. It fetches the commit the
