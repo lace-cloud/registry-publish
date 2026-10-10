@@ -10,10 +10,11 @@
 # call install_lace in-process, so the PATH it exports is the PATH the rest
 # of the script runs `lace` under; nothing is handed to a later step.
 #
-# install_lace reads, from the action's env:
-#   LACE_VERSION   vX.Y.Z to install; empty means the release this copy of
-#                  the action was published with (PINNED_VERSION)
-# and installs into $RUNNER_TEMP/lace-bin.
+# install_lace installs the release this copy of the action was published
+# with (PINNED_VERSION) into $RUNNER_TEMP/lace-bin. No caller input names
+# another: the scripts that call lace were checked against that release's
+# command tree before it was published, and a release nothing checked is
+# not one they may run.
 # LACE_BASE_URL overrides the release origin, for the fixture tests only.
 #
 # Fail-closed throughout: every failure exits non-zero with the reason.
@@ -46,7 +47,7 @@ install_lace() {
   [ "$PINNED_VERSION" != "@LACE_CLI_VERSION@" ] \
     || die "this install-lace.sh is an unrendered template (PINNED_VERSION is still the placeholder) — use a published release of the action"
 
-  version="${LACE_VERSION:-$PINNED_VERSION}"
+  version="$PINNED_VERSION"
   [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
     || die "version '${version}' is not a plain vX.Y.Z"
 

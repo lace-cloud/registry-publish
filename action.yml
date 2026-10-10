@@ -15,12 +15,6 @@ inputs:
     description: The Lace API the artifacts are published to.
     required: false
     default: https://lace.cloud
-  lace-version:
-    description: >-
-      The lace CLI release to publish with, as vX.Y.Z. Empty uses the
-      release this version of the action was published with.
-    required: false
-    default: ''
   path:
     description: >-
       One manifest directory to publish, instead of the directories the push
@@ -35,7 +29,6 @@ runs:
       env:
         LACE_TOKEN: ${{ inputs.token }}
         LACE_AUTH_URL: ${{ inputs.api-url }}
-        LACE_VERSION: ${{ inputs.lace-version }}
         INPUT_PATH: ${{ inputs.path }}
         EVENT_NAME: ${{ github.event_name }}
         CREATED: ${{ github.event.created }}

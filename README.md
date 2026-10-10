@@ -67,7 +67,6 @@ A push that creates a branch publishes every manifest in the repository.
 |---|---|---|
 | `token` | required | The Lace service token. |
 | `api-url` | `https://lace.cloud` | The Lace API to publish to. |
-| `lace-version` | the release this version of the action was published with | The `lace` release to publish with, as `vX.Y.Z`. |
 | `path` | empty | One manifest directory to publish instead of the changed ones. |
 
 To republish one directory by hand, trigger the workflow with
@@ -111,7 +110,7 @@ on:
 `v1` moves to the newest `v1.N` release; `v1.N` never changes. Each `v1.N`
 installs the `lace` release that was current when it was published, after
 verifying the installer's signature under Lace's release-signing key. Pin
-`@v1.N` to hold a release still, or pass `lace-version` to hold the CLI alone.
+`@v1.N` to hold a release still.
 
 ## License
 

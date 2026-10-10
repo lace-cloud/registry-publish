@@ -8,7 +8,6 @@
 # Inputs, from the action's env (action.yml maps them):
 #   LACE_TOKEN      the Lace service token; read by the lace CLI
 #   LACE_AUTH_URL   the Lace API to publish to; read by the lace CLI
-#   LACE_VERSION    the lace release to publish with; empty = the pin
 #   INPUT_PATH      one manifest directory to publish, instead of the changed ones
 #   EVENT_NAME, CREATED, BEFORE, GITHUB_SHA   the triggering event
 #
