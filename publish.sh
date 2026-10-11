@@ -93,10 +93,7 @@ publish_one() {
   local d="$1" manifest axis readme rc
   manifest="${d}/manifest.yaml"
   axis="$(manifest_top_level axis < "$manifest")"
-  readme=""
-  if [ -f "${d}/README.md" ]; then
-    readme="${d}/README.md"
-  fi
+  readme="$(manifest_readme "$d")"
 
   # A module publishes its tree, so it is validated first and sent with
   # --path; every other axis sends the manifest alone, and the CLI refuses

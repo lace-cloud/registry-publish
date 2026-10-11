@@ -29,6 +29,14 @@ manifest_top_level() {
   printf '%s' "$line" | tr -d "[:space:]\"'"
 }
 
+# manifest_readme <dir> — the README a manifest directory publishes with: its
+# README.md path, or nothing when the directory has none.
+manifest_readme() {
+  if [ -f "$1/README.md" ]; then
+    printf '%s' "$1/README.md"
+  fi
+}
+
 # manifest_paths_all — every tracked path, NUL-delimited.
 manifest_paths_all() {
   git ls-files -z
