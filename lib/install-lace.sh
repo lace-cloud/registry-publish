@@ -27,7 +27,7 @@
 # install_lace refuse an unrendered copy rather than treating a placeholder
 # as a version or a key.
 
-PINNED_VERSION="v2.55.0"
+PINNED_VERSION="v2.56.0"
 MINISIGN_PUBKEY="RWQ1lQVwyfRwZoE5kuVWWrqbg7FTBd6GS4O7VOFp2i8CDpSwvFMIRR/H"
 
 install_lace() {
