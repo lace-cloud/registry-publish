@@ -21,13 +21,13 @@
 #
 # The mirror renders two placeholders before this file is published:
 # PINNED_VERSION below, and MINISIGN_PUBKEY, which scripts/release-signing.pub
-# in the Lace monorepo declares (scripts/render-install-artifact.sh writes
+# in the Lace monorepo declares (tools/release/render-install-artifact.sh writes
 # both). install.sh embeds the same key for the same reason: this runs on a
 # machine with no checkout of the monorepo to read it from. The guards in
 # install_lace refuse an unrendered copy rather than treating a placeholder
 # as a version or a key.
 
-PINNED_VERSION="v2.54.1"
+PINNED_VERSION="v2.55.0"
 MINISIGN_PUBKEY="RWQ1lQVwyfRwZoE5kuVWWrqbg7FTBd6GS4O7VOFp2i8CDpSwvFMIRR/H"
 
 install_lace() {
@@ -71,7 +71,7 @@ install_lace() {
     $sudo_cmd apt-get install -y minisign
   fi
 
-  # scripts/sha256.sh holds this same helper for the scripts that run from a
+  # scripts/ci/sha256.sh holds this same helper for the scripts that run from a
   # checkout of the monorepo. This file ships under its own licence with
   # nothing of the monorepo's beside it, so it carries its own copy; a
   # missing tool is the caller's `|| die`.
@@ -98,9 +98,9 @@ install_lace() {
     || die "could not download ${base_url}/install.sh.minisig — refusing to run an installer with no signature"
 
   # The trusted comment is "install.sh <sha256 of the signed bytes>": minisign
-  # binds content only, so without comparing it a validly-signed object
-  # for something else could be served at this URL. Full equality, never a
-  # prefix — the same rule scripts/install.sh holds every release object to.
+  # binds content only, so without comparing it a validly-signed object for
+  # something else could be served at this URL. Full equality, never a prefix —
+  # the same rule tools/release/install.sh holds every release object to.
   digest="$(sha256_of "${workdir}/install.sh")" \
     || die "could not compute the sha256 of install.sh — neither sha256sum nor shasum is available"
   expected="install.sh ${digest}"

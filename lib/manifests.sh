@@ -16,8 +16,9 @@
 #   - The directory list is read from fd 3, so `lace` never consumes the
 #     remaining directories from the loop's stdin.
 #
-# The monorepo keeps this file once, in apps/actions/lib/; the mirror copies
-# it into each published action beside its script (scripts/render-actions.sh).
+# The monorepo keeps this file once, in apps/actions/lib/; the mirror copies it
+# into each published action beside its script
+# (apps/actions/scripts/render-actions.sh).
 
 # manifest_top_level <key> — the top-level scalar <key> of the YAML on
 # stdin, without quotes or a trailing comment.
