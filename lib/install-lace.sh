@@ -32,6 +32,7 @@ MINISIGN_PUBKEY="RWQ1lQVwyfRwZoE5kuVWWrqbg7FTBd6GS4O7VOFp2i8CDpSwvFMIRR/H"
 
 install_lace() {
   local base_url version runner_temp install_dir workdir sudo_cmd digest expected actual installed
+  local pair_attempts pair_attempt pair_reason verify_rc
 
   base_url="${LACE_BASE_URL:-https://releases.lace.cloud}"
   workdir=""
@@ -92,22 +93,40 @@ install_lace() {
 
   workdir="$(mktemp -d)"
 
-  install_lace_fetch "${base_url}/install.sh" "${workdir}/install.sh" \
-    || die "could not download ${base_url}/install.sh"
-  install_lace_fetch "${base_url}/install.sh.minisig" "${workdir}/install.sh.minisig" \
-    || die "could not download ${base_url}/install.sh.minisig — refusing to run an installer with no signature"
+  # The two CDN objects can come from different publishes. Re-fetch both
+  # after a verification failure; no installer runs without a verified pair.
+  pair_attempts=3
+  pair_attempt=1
+  while :; do
+    install_lace_fetch "${base_url}/install.sh" "${workdir}/install.sh" \
+      || die "could not download ${base_url}/install.sh"
+    install_lace_fetch "${base_url}/install.sh.minisig" "${workdir}/install.sh.minisig" \
+      || die "could not download ${base_url}/install.sh.minisig — refusing to run an installer with no signature"
 
-  # The trusted comment is "install.sh <sha256 of the signed bytes>": minisign
-  # binds content only, so without comparing it a validly-signed object for
-  # something else could be served at this URL. Full equality, never a prefix —
-  # the same rule tools/release/install.sh holds every release object to.
-  digest="$(sha256_of "${workdir}/install.sh")" \
-    || die "could not compute the sha256 of install.sh — neither sha256sum nor shasum is available"
-  expected="install.sh ${digest}"
-  actual="$(minisign -V -Q -m "${workdir}/install.sh" -x "${workdir}/install.sh.minisig" -P "$MINISIGN_PUBKEY" 2>"${workdir}/minisign.err")" \
-    || die "the signature on ${base_url}/install.sh does not verify under the release-signing key — refusing to run it. ($(cat "${workdir}/minisign.err"))"
-  [ "$actual" = "$expected" ] \
-    || die "the signature on ${base_url}/install.sh is valid but its trusted comment reads '${actual}', not '${expected}' — a genuinely-signed object for something else is being served at this URL. Refusing to run it."
+    # The trusted comment is "install.sh <sha256 of the signed bytes>": minisign
+    # binds content only, so without comparing it a validly-signed object for
+    # something else could be served at this URL. Full equality, never a prefix —
+    # the same rule tools/release/install.sh holds every release object to.
+    digest="$(sha256_of "${workdir}/install.sh")" \
+      || die "could not compute the sha256 of install.sh — neither sha256sum nor shasum is available"
+    expected="install.sh ${digest}"
+    verify_rc=0
+    actual="$(minisign -V -Q -m "${workdir}/install.sh" -x "${workdir}/install.sh.minisig" -P "$MINISIGN_PUBKEY" 2>"${workdir}/minisign.err")" || verify_rc=$?
+    if [ "$verify_rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
+      break
+    fi
+    if [ "$verify_rc" -eq 0 ]; then
+      pair_reason="the signature on ${base_url}/install.sh is valid but its trusted comment reads '${actual}', not '${expected}' — a genuinely-signed object for something else is being served at this URL. Refusing to run it."
+    else
+      pair_reason="the signature on ${base_url}/install.sh does not verify under the release-signing key — refusing to run it. ($(cat "${workdir}/minisign.err"))"
+    fi
+    if [ "$pair_attempt" -ge "$pair_attempts" ]; then
+      die "$pair_reason"
+    fi
+    echo "::notice::install-lace: the pair at ${base_url} does not verify together — it may be mid-replacement; reading it again (${pair_attempt} of ${pair_attempts})." >&2
+    pair_attempt=$((pair_attempt + 1))
+    sleep 3
+  done
 
   # The install directory is on PATH before install.sh runs: install.sh
   # warns about a directory that is not. Assigning PATH clears bash's
