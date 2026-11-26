@@ -1,10 +1,10 @@
 # shellcheck shell=bash
 # The manifest-directory primitives both registry actions share: which
-# manifest directories a set of changed paths belongs to, how a top-level
-# scalar of a manifest is read, how a compared commit is made present in a
+# manifest directories a set of changed paths belongs to, how a manifest's
+# top-level scalars are read, how a compared commit is made present in a
 # shallow checkout, how the directory list is looped over, and the step
-# summary table. Sourced, not executed — no shebang; inherits the caller's
-# `set -euo pipefail`.
+# summary table. Sourced, not executed — no
+# shebang; inherits the caller's `set -euo pipefail`.
 #
 # Invariants every caller relies on:
 #   - Paths are NUL-delimited end to end, and git runs with
@@ -23,9 +23,13 @@
 # manifest_top_level <key> — the top-level scalar <key> of the YAML on
 # stdin, without quotes or a trailing comment.
 manifest_top_level() {
-  local line
-  line="$(grep -m 1 "^$1:" || true)"
-  line="${line%%#*}"
+  manifest_scalar "$1" "$(grep -m 1 "^$1:" || true)"
+}
+
+# manifest_scalar <key> <line> — the value of the `<key>: value` line, without
+# quotes, whitespace or a trailing comment.
+manifest_scalar() {
+  local line="${2%%#*}"
   line="${line#"$1":}"
   printf '%s' "$line" | tr -d "[:space:]\"'"
 }
